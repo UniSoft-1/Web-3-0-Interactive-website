@@ -1,0 +1,19 @@
+// PostgreSQL Schema (database/schema.sql)
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE trades (
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES users(id),
+    asset VARCHAR(50) NOT NULL,
+    amount DECIMAL(18,8) NOT NULL,
+    price DECIMAL(18,8) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_user_id ON trades(user_id);
