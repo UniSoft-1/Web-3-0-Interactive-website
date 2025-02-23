@@ -1,0 +1,52 @@
+// AI Analytics Implementation (main.py)
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers import LSTM, Dense, Dropout
+
+# Load dataset
+def load_data(file_path):
+    df = pd.read_csv(file_path)
+    return df
+
+# Preprocess data
+def preprocess_data(df):
+    scaler = MinMaxScaler()
+    df_scaled = scaler.fit_transform(df[['Open', 'High', 'Low', 'Close', 'Volume']])
+    return df_scaled, scaler
+
+# Build LSTM Model
+def build_model(input_shape):
+    model = Sequential()
+    model.add(LSTM(units=50, return_sequences=True, input_shape=input_shape))
+    model.add(Dropout(0.2))
+    model.add(LSTM(units=50, return_sequences=False))
+    model.add(Dropout(0.2))
+    model.add(Dense(units=25))
+    model.add(Dense(units=1))
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    return model
+
+# Train model
+def train_model(model, X_train, y_train, epochs=50, batch_size=32):
+    model.fit(X_train, y_train, epochs=epochs, batch_size=batch_size)
+    return model
+
+# Predict market trends
+def predict(model, X_test, scaler):
+    predictions = model.predict(X_test)
+    return scaler.inverse_transform(predictions)
+
+if __name__ == "__main__":
+    df = load_data('datasets/market_data.csv')
+    df_scaled, scaler = preprocess_data(df)
+    
+    X_train, y_train = df_scaled[:-50], df_scaled[50:, 3]  # Example training data
+    model = build_model((X_train.shape[1], X_train.shape[2]))
+    model = train_model(model, X_train, y_train)
+    
+    X_test = df_scaled[-50:]
+    predictions = predict(model, X_test, scaler)
+    print("Market trend predictions:", predictions)
