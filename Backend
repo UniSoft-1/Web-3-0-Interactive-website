@@ -1,0 +1,127 @@
+// Backend Implementation
+const express = require('express');
+const cors = require('cors');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
+const morgan = require('morgan');
+const helmet = require('helmet');
+
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+app.use(morgan('dev'));
+app.use(helmet());
+
+// Database Connection
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error(err));
+
+// Routes
+const userRoutes = require('./routes/userRoutes');
+const tradeRoutes = require('./routes/tradeRoutes');
+
+app.use('/api/users', userRoutes);
+app.use('/api/trades', tradeRoutes);
+
+app.get('/', (req, res) => {
+  res.send('Web 3.0 Trading Platform Backend API is running');
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// User Routes (routes/userRoutes.js)
+const express = require('express');
+const router = express.Router();
+const { getUsers, registerUser } = require('../controllers/userController');
+
+router.get('/', getUsers);
+router.post('/register', registerUser);
+
+module.exports = router;
+
+// User Controller (controllers/userController.js)
+const User = require('../models/User');
+
+exports.getUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.registerUser = async (req, res) => {
+  const { name, email, password } = req.body;
+  try {
+    const newUser = new User({ name, email, password });
+    await newUser.save();
+    res.status(201).json(newUser);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// User Model (models/User.js)
+const mongoose = require('mongoose');
+
+const UserSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+}, { timestamps: true });
+
+module.exports = mongoose.model('User', UserSchema);
+
+// Trade Routes (routes/tradeRoutes.js)
+const express = require('express');
+const router = express.Router();
+const { getTrades, createTrade } = require('../controllers/tradeController');
+
+router.get('/', getTrades);
+router.post('/create', createTrade);
+
+module.exports = router;
+
+// Trade Controller (controllers/tradeController.js)
+const Trade = require('../models/Trade');
+
+exports.getTrades = async (req, res) => {
+  try {
+    const trades = await Trade.find();
+    res.json(trades);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.createTrade = async (req, res) => {
+  const { asset, amount, price } = req.body;
+  try {
+    const newTrade = new Trade({ asset, amount, price });
+    await newTrade.save();
+    res.status(201).json(newTrade);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Trade Model (models/Trade.js)
+const mongoose = require('mongoose');
+
+const TradeSchema = new mongoose.Schema({
+  asset: { type: String, required: true },
+  amount: { type: Number, required: true },
+  price: { type: Number, required: true },
+}, { timestamps: true });
+
+module.exports = mongoose.model('Trade', TradeSchema);
+
+// Additional backend components such as authentication, broker integration, and notifications can be added based on requirements.
